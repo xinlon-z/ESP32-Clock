@@ -26,6 +26,8 @@ A modern landscape clock application for the Waveshare ESP32-S3-Touch-LCD-3.49 b
 - Battery voltage ADC input
 - USB Serial/JTAG connection for flashing and monitoring
 
+Official board documentation: [Waveshare ESP32-S3-Touch-LCD-3.49](https://docs.waveshare.net/ESP32-S3-Touch-LCD-3.49/)
+
 ## Project Layout
 
 - `main/clock_ui.cpp` - LVGL clock UI and battery/status rendering.
