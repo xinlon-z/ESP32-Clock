@@ -8,6 +8,7 @@
 #include "extra/libs/sjpg/tjpgd.h"
 #include "extra/libs/tiny_ttf/lv_tiny_ttf.h"
 #include "lvgl.h"
+#include "music_player_icon_geometry.h"
 #include "music_background.h"
 #include "music_mqtt.h"
 #include "music_visualizer.h"
@@ -141,6 +142,12 @@ const lv_font_t* musicSmallTextFont()
         s_music_font_small = createMusicFont(17);
     }
     return s_music_font_small ? s_music_font_small : &lv_font_simsun_16_cjk;
+}
+
+void alignPlayPauseIcon(lv_obj_t* icon, bool playing)
+{
+    const MusicIconOffset offset = musicPlayPauseIconOffset(playing);
+    lv_obj_align(icon, LV_ALIGN_CENTER, offset.x, offset.y);
 }
 
 size_t jpegInput(JDEC* jd, uint8_t* buff, size_t ndata)
@@ -433,7 +440,7 @@ void MusicPlayerScreen::create()
     lv_obj_t* pause = makeRoundButton(stage, 450, 20, kButtonMain, true);
     play_pause_icon_ = makeLabel(pause, LV_SYMBOL_PAUSE, &lv_font_montserrat_20, 0x050507);
     lv_obj_set_style_text_align(play_pause_icon_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_center(play_pause_icon_);
+    alignPlayPauseIcon(play_pause_icon_, true);
 
     timer_ = lv_timer_create(onTimer, 1000, this);
     updateUi();
@@ -517,7 +524,7 @@ void MusicPlayerScreen::updateUi()
     }
     if (play_pause_icon_) {
         lv_label_set_text(play_pause_icon_, state_.playing ? LV_SYMBOL_PAUSE : LV_SYMBOL_PLAY);
-        lv_obj_center(play_pause_icon_);
+        alignPlayPauseIcon(play_pause_icon_, state_.playing);
     }
 
     char elapsed[12];
