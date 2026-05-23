@@ -10,6 +10,11 @@ extern "C" void adc_get_value(float* value, int* data)
     if (data) *data = 0;
 }
 
+namespace ClockNet {
+void pauseForSleep() {}
+void requestSync() {}
+} // namespace ClockNet
+
 int main()
 {
     struct Case {

@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "esp_event.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
@@ -37,6 +38,10 @@ int s_retry_num = 0;
 volatile bool s_wifi_connected = false;
 volatile bool s_ntp_synced = false;
 volatile bool s_sync_in_progress = false;
+volatile bool s_wifi_initialized = false;
+volatile bool s_wifi_started = false;
+volatile bool s_wifi_sleep_paused = false;
+TaskHandle_t s_sync_task = nullptr;
 
 void set_rtc_from_system_time()
 {
@@ -146,10 +151,21 @@ bool try_sync_time(const char *server)
 void wifi_event_handler(void *, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
+        s_wifi_started = true;
+        if (!s_wifi_sleep_paused) {
+            esp_wifi_connect();
+        }
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_STOP) {
+        s_wifi_started = false;
+        s_wifi_connected = false;
+        xEventGroupClearBits(s_wifi_event_group, kWifiConnectedBit);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         s_wifi_connected = false;
         xEventGroupClearBits(s_wifi_event_group, kWifiConnectedBit);
+        if (s_wifi_sleep_paused) {
+            ESP_LOGI(kTag, "WiFi disconnected for app sleep");
+            return;
+        }
         ++s_retry_num;
         esp_wifi_connect();
         if ((s_retry_num % kMaxRetries) == 0) {
@@ -171,7 +187,16 @@ void sync_time_task(void *)
     setenv("TZ", "CST-8", 1);
     tzset();
 
-    while (!s_ntp_synced) {
+    while (true) {
+        if (s_wifi_sleep_paused) {
+            s_sync_in_progress = false;
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            continue;
+        }
+        if (s_ntp_synced) {
+            break;
+        }
+
         EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
                                                kWifiConnectedBit,
                                                pdFALSE,
@@ -197,7 +222,38 @@ void sync_time_task(void *)
         }
     }
 
+    s_sync_task = nullptr;
     vTaskDelete(nullptr);
+}
+
+void start_sync_task_if_needed()
+{
+    if (s_sync_task != nullptr) {
+        return;
+    }
+    BaseType_t created = xTaskCreatePinnedToCore(sync_time_task, "clock_sntp", 4096, nullptr, 3, &s_sync_task, 0);
+    if (created != pdPASS) {
+        s_sync_task = nullptr;
+        ESP_LOGW(kTag, "Failed to create NTP sync task");
+    }
+}
+
+void start_wifi_station()
+{
+    if (!s_wifi_initialized) {
+        return;
+    }
+
+    esp_err_t ret = esp_wifi_start();
+    if (ret == ESP_OK) {
+        s_wifi_started = true;
+        return;
+    }
+
+    ESP_LOGW(kTag, "WiFi start returned %s", esp_err_to_name(ret));
+    if (s_wifi_started) {
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_connect());
+    }
 }
 
 void network_task(void *)
@@ -228,10 +284,11 @@ void network_task(void *)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    s_wifi_initialized = true;
+    start_wifi_station();
     ESP_LOGI(kTag, "WiFi start");
 
-    xTaskCreatePinnedToCore(sync_time_task, "clock_sntp", 4096, nullptr, 3, nullptr, 0);
+    start_sync_task_if_needed();
     vTaskDelete(nullptr);
 }
 
@@ -244,6 +301,35 @@ void ClockNet::init()
     }
     s_wifi_event_group = xEventGroupCreate();
     xTaskCreatePinnedToCore(network_task, "clock_net", 4096, nullptr, 3, nullptr, 0);
+}
+
+void ClockNet::pauseForSleep()
+{
+    s_wifi_sleep_paused = true;
+    s_sync_in_progress = false;
+    s_wifi_connected = false;
+    if (s_wifi_event_group != nullptr) {
+        xEventGroupClearBits(s_wifi_event_group, kWifiConnectedBit);
+    }
+    if (s_wifi_initialized && s_wifi_started) {
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_disconnect());
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_stop());
+    }
+}
+
+void ClockNet::requestSync()
+{
+    s_wifi_sleep_paused = false;
+    s_ntp_synced = false;
+    s_sync_in_progress = false;
+
+    if (s_wifi_event_group == nullptr) {
+        init();
+        return;
+    }
+
+    start_sync_task_if_needed();
+    start_wifi_station();
 }
 
 ClockNet::Status ClockNet::getStatus()

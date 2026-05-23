@@ -2,14 +2,15 @@
 #include "freertos/task.h"
 
 #include "adc_bsp.h"
-#include "clock_face_screen.h"
 #include "clock_net.h"
 #include "i2c_bsp.h"
 #include "i2c_equipment.h"
 #include "lcd_bl_pwm_bsp.h"
 #include "lvgl.h"
 #include "lvgl_port.h"
+#include "music_mqtt.h"
 #include "power_mgr.h"
+#include "screen_manager.h"
 #include "touch_drv.h"
 #include "user_config.h"
 
@@ -21,6 +22,7 @@ extern "C" void app_main(void)
     adc_bsp_init();
     PowerManager::init();
     ClockNet::init();
+    MusicMqtt::init();
     ESP_ERROR_CHECK(LvglPort::init());
 
     static lv_indev_drv_t indev;
@@ -29,8 +31,7 @@ extern "C" void app_main(void)
     indev.read_cb = TouchDriver::readCb;
     lv_indev_drv_register(&indev);
 
-    static ClockFaceScreen face;
     if (LvglPort::Guard g; g) {
-        face.create();
+        ScreenManager::instance().create();
     }
 }

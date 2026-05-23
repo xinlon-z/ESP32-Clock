@@ -1,6 +1,8 @@
 build/
+build-sim/
 managed_components/
 .superpowers/
 main/clock_secrets.h
+main/assets/DroidSansFallbackFull.ttf
 sdkconfig.old
 .DS_Store
