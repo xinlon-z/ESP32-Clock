@@ -1,0 +1,57 @@
+#ifndef LV_CONF_H
+#define LV_CONF_H
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#define LV_COLOR_DEPTH 16
+#define LV_COLOR_16_SWAP 0
+#define LV_COLOR_SCREEN_TRANSP 0
+
+#define LV_MEM_CUSTOM 1
+#define LV_MEM_CUSTOM_INCLUDE <stdlib.h>
+#define LV_MEM_CUSTOM_ALLOC malloc
+#define LV_MEM_CUSTOM_FREE free
+#define LV_MEM_CUSTOM_REALLOC realloc
+#define LV_MEMCPY_MEMSET_STD 1
+
+#define LV_DISP_DEF_REFR_PERIOD 16
+#define LV_INDEV_DEF_READ_PERIOD 16
+#define LV_TICK_CUSTOM 0
+#define LV_DPI_DEF 130
+
+#define LV_DRAW_COMPLEX 1
+#define LV_SHADOW_CACHE_SIZE 0
+#define LV_CIRCLE_CACHE_SIZE 4
+#define LV_LAYER_SIMPLE_BUF_SIZE (64 * 1024)
+#define LV_LAYER_SIMPLE_FALLBACK_BUF_SIZE (8 * 1024)
+#define LV_IMG_CACHE_DEF_SIZE 2
+
+#define LV_USE_LOG 1
+#define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+#define LV_USE_ASSERT_NULL 1
+#define LV_USE_ASSERT_MALLOC 1
+
+#define LV_USE_PERF_MONITOR 0
+#define LV_USE_MEM_MONITOR 0
+
+#define LV_FONT_MONTSERRAT_12 1
+#define LV_FONT_MONTSERRAT_16 1
+#define LV_FONT_MONTSERRAT_20 1
+#define LV_FONT_MONTSERRAT_48 1
+#define LV_FONT_SIMSUN_16_CJK 1
+#define LV_FONT_FMT_TXT_LARGE 1
+#define LV_FONT_DEFAULT &lv_font_montserrat_16
+
+#define LV_USE_LABEL 1
+#define LV_USE_IMG 1
+#define LV_USE_BAR 1
+#define LV_USE_BTN 1
+
+#define LV_USE_SJPG 1
+#define LV_USE_TINY_TTF 1
+#define LV_TINY_TTF_FILE_SUPPORT 0
+
+#define LV_USE_GPU_SDL 0
+
+#endif

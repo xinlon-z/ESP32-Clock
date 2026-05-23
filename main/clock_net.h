@@ -9,6 +9,8 @@ struct Status {
 };
 
 void   init();
+void   pauseForSleep();
+void   requestSync();
 Status getStatus();
 
 } // namespace ClockNet
