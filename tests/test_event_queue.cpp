@@ -47,5 +47,10 @@ int main()
     failures += expect(out.payload.cover_state.status == CoverStatus::Ready, "cover status mismatch");
     failures += expect(!queue.poll(&out), "queue should be empty");
 
+    EventQueue<AppEvent, 0> zero;
+    failures += expect(!zero.publish(first), "zero-capacity publish should fail");
+    failures += expect(!zero.poll(&out), "zero-capacity poll should fail");
+    failures += expect(zero.overflowCount() == 1, "zero-capacity overflow count should be 1");
+
     return failures == 0 ? 0 : 1;
 }

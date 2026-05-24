@@ -25,33 +25,33 @@ enum class CoverStatus : uint8_t {
 };
 
 struct ClockTimeChangedEvent {
-    uint32_t revision = 0;
+    uint32_t revision;
 };
 
 struct PowerStateChangedEvent {
-    uint32_t revision = 0;
+    uint32_t revision;
 };
 
 struct NetworkStateChangedEvent {
-    uint32_t revision = 0;
+    uint32_t revision;
 };
 
 struct MusicStateChangedEvent {
-    uint32_t revision = 0;
+    uint32_t revision;
 };
 
 struct CoverStateChangedEvent {
-    uint32_t cover_id = 0;
-    CoverStatus status = CoverStatus::Idle;
+    uint32_t cover_id;
+    CoverStatus status;
 };
 
 struct FeatureActionEvent {
-    uint8_t screen_id = 0;
-    uint8_t action_id = 0;
+    uint8_t screen_id;
+    uint8_t action_id;
 };
 
 struct AppEvent {
-    AppEventType type = AppEventType::ClockTimeChanged;
+    AppEventType type;
     union Payload {
         ClockTimeChangedEvent clock_time;
         PowerStateChangedEvent power_state;
@@ -59,8 +59,6 @@ struct AppEvent {
         MusicStateChangedEvent music_state;
         CoverStateChangedEvent cover_state;
         FeatureActionEvent feature_action;
-
-        Payload() : clock_time{} {}
     } payload;
 };
 

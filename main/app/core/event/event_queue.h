@@ -8,14 +8,19 @@ class EventQueue {
 public:
     bool publish(const T& event)
     {
-        if (Capacity == 0 || count_ == Capacity) {
+        if constexpr (Capacity == 0) {
             ++overflow_count_;
             return false;
+        } else {
+            if (count_ == Capacity) {
+                ++overflow_count_;
+                return false;
+            }
+            items_[tail_] = event;
+            tail_ = (tail_ + 1) % Capacity;
+            ++count_;
+            return true;
         }
-        items_[tail_] = event;
-        tail_ = (tail_ + 1) % Capacity;
-        ++count_;
-        return true;
     }
 
     bool poll(T* event)
@@ -23,10 +28,14 @@ public:
         if (!event || count_ == 0) {
             return false;
         }
-        *event = items_[head_];
-        head_ = (head_ + 1) % Capacity;
-        --count_;
-        return true;
+        if constexpr (Capacity == 0) {
+            return false;
+        } else {
+            *event = items_[head_];
+            head_ = (head_ + 1) % Capacity;
+            --count_;
+            return true;
+        }
     }
 
     size_t size() const { return count_; }
