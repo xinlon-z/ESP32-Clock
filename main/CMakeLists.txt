@@ -5,7 +5,6 @@ idf_component_register(
        "power_mgr.cpp"
        "clock_face_screen.cpp"
        "clock_net.cpp"
-       "screen_nav.cpp"
        "music_state.cpp"
        "music_background.cpp"
        "music_visualizer.cpp"
