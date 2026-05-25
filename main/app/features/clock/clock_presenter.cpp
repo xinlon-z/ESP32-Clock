@@ -70,9 +70,13 @@ void ClockPresenter::tick()
     }
     if (time_changed) {
         renderTimeSnapshot();
+    } else if (power_changed) {
+        renderCachedTime();
     }
     if (network_changed) {
         renderNetworkSnapshot();
+    } else if (power_changed) {
+        renderCachedNetwork();
     }
 }
 
@@ -86,9 +90,9 @@ void ClockPresenter::renderAll()
 void ClockPresenter::renderTimeSnapshot()
 {
     const ClockSnapshot clock = TimeService::get().snapshot();
-    const ClockDisplayState time = model_.buildTime(clock.rtc_ok, clock.hour, clock.minute, clock.second,
-                                                    clock.week, clock.month, clock.day);
-    view_.renderTime(time, dimmed_);
+    time_state_ = model_.buildTime(clock.rtc_ok, clock.hour, clock.minute, clock.second,
+                                   clock.week, clock.month, clock.day);
+    renderCachedTime();
 }
 
 void ClockPresenter::renderPowerSnapshot()
@@ -104,10 +108,19 @@ void ClockPresenter::renderPowerSnapshot()
 void ClockPresenter::renderNetworkSnapshot()
 {
     const NetworkSnapshot network = NetworkService::get().snapshot();
-    NetworkDisplayState net{};
-    net.wifi_connected = network.wifi_connected;
-    net.sync_in_progress = network.sync_in_progress;
-    net.ntp_synced = network.ntp_synced;
-    net.external_power = external_power_;
-    view_.renderNetwork(net, dimmed_);
+    network_state_.wifi_connected = network.wifi_connected;
+    network_state_.sync_in_progress = network.sync_in_progress;
+    network_state_.ntp_synced = network.ntp_synced;
+    renderCachedNetwork();
+}
+
+void ClockPresenter::renderCachedTime()
+{
+    view_.renderTime(time_state_, dimmed_);
+}
+
+void ClockPresenter::renderCachedNetwork()
+{
+    network_state_.external_power = external_power_;
+    view_.renderNetwork(network_state_, dimmed_);
 }

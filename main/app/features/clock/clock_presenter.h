@@ -15,6 +15,8 @@ public:
 private:
     ClockView& view_;
     ClockModel model_;
+    ClockDisplayState time_state_{};
+    NetworkDisplayState network_state_{};
     bool running_ = false;
     bool dimmed_ = false;
     bool external_power_ = false;
@@ -26,4 +28,6 @@ private:
     void renderTimeSnapshot();
     void renderPowerSnapshot();
     void renderNetworkSnapshot();
+    void renderCachedTime();
+    void renderCachedNetwork();
 };

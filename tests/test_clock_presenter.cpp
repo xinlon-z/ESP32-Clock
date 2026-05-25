@@ -148,7 +148,9 @@ int main()
 
     EventBus::get().resetForTest();
     g_time_after_poll.revision = 1;
+    g_power_after_poll.external_power = false;
     g_power_after_poll.battery_percent = 55;
+    g_power_after_poll.dimmed = false;
     g_power_after_poll.revision = 2;
     g_network_after_poll.revision = 1;
     g_time_snapshots = 0;
@@ -170,7 +172,7 @@ int main()
         return 1;
     }
 
-    if (g_time_renders != 0 || g_battery_renders != 1 || g_network_renders != 0) {
+    if (g_time_renders != 1 || g_battery_renders != 1 || g_network_renders != 1) {
         printf("power tick rendered wrong domains: %d %d %d\n",
                g_time_renders, g_battery_renders, g_network_renders);
         return 1;
@@ -179,6 +181,17 @@ int main()
     if (g_rendered_battery.percent != 55 || !g_rendered_battery.update_label) {
         printf("power tick battery render failed: %d %d\n",
                g_rendered_battery.percent, g_rendered_battery.update_label);
+        return 1;
+    }
+
+    if (g_time_dimmed || g_battery_dimmed || g_network_dimmed) {
+        printf("power tick did not update dimming: %d %d %d\n",
+               g_time_dimmed, g_battery_dimmed, g_network_dimmed);
+        return 1;
+    }
+
+    if (g_rendered_network.external_power) {
+        printf("power tick did not update external power icon state\n");
         return 1;
     }
 
