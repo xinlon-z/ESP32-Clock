@@ -37,9 +37,9 @@ ClockDisplayState ClockModel::buildTime(bool rtc_ok, unsigned hour, unsigned min
 BatteryDisplayState ClockModel::buildBattery(int percent)
 {
     BatteryDisplayState state{};
-    state.percent = percent;
     if (percent < 0) {
         battery_disp_pct_ = -1;
+        state.percent = -1;
         state.update_label = true;
         return state;
     }
@@ -47,6 +47,7 @@ BatteryDisplayState ClockModel::buildBattery(int percent)
     if (state.update_label) {
         battery_disp_pct_ = percent;
     }
+    state.percent = battery_disp_pct_;
     return state;
 }
 
