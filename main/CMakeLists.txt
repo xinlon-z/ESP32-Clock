@@ -23,6 +23,8 @@ idf_component_register(
        "app/services/time_service.cpp"
        "app/services/power_service.cpp"
        "app/services/network_service.cpp"
+       "app/services/mqtt_service.cpp"
+       "app/services/cover_service.cpp"
   REQUIRES i2c_bsp i2c_equipment adc_bsp lcd_bl_pwm_bsp
            esp_wifi esp_event esp_netif nvs_flash lwip
            esp_driver_usb_serial_jtag esp_timer esp_lcd driver
