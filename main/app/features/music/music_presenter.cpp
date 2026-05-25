@@ -21,16 +21,6 @@ void MusicPresenter::start()
     running_ = true;
     MqttService::get().pumpPendingCover();
 
-    AppEvent event{};
-    while (EventBus::get().poll(&event)) {
-        if (event.type == AppEventType::MusicStateChanged) {
-            last_music_revision_ = event.payload.music_state.revision;
-        } else if (event.type == AppEventType::CoverStateChanged) {
-            last_cover_id_ = event.payload.cover_state.cover_id;
-            last_cover_status_ = event.payload.cover_state.status;
-        }
-    }
-
     music_state_ = MqttService::get().snapshot();
     last_music_revision_ = music_state_.revision;
     const CoverState cover = CoverService::get().active();
