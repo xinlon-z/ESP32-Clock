@@ -14,6 +14,9 @@ idf_component_register(
        "screen_manager.cpp"
        "app/core/event/event_bus.cpp"
        "app/screens/gesture_manager.cpp"
+       "app/services/time_service.cpp"
+       "app/services/power_service.cpp"
+       "app/services/network_service.cpp"
   REQUIRES i2c_bsp i2c_equipment adc_bsp lcd_bl_pwm_bsp
            esp_wifi esp_event esp_netif nvs_flash lwip
            esp_driver_usb_serial_jtag esp_timer esp_lcd driver
