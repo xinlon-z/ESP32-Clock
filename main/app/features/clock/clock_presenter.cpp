@@ -45,48 +45,69 @@ void ClockPresenter::tick()
     PowerService::get().poll();
     NetworkService::get().poll();
 
-    bool dirty = false;
+    bool time_changed = false;
+    bool power_changed = false;
+    bool network_changed = false;
     AppEvent event{};
     while (EventBus::get().poll(&event)) {
         if (event.type == AppEventType::ClockTimeChanged &&
             event.payload.clock_time.revision != last_time_revision_) {
             last_time_revision_ = event.payload.clock_time.revision;
-            dirty = true;
+            time_changed = true;
         } else if (event.type == AppEventType::PowerStateChanged &&
                    event.payload.power_state.revision != last_power_revision_) {
             last_power_revision_ = event.payload.power_state.revision;
-            dirty = true;
+            power_changed = true;
         } else if (event.type == AppEventType::NetworkStateChanged &&
                    event.payload.network_state.revision != last_network_revision_) {
             last_network_revision_ = event.payload.network_state.revision;
-            dirty = true;
+            network_changed = true;
         }
     }
 
-    if (dirty) {
-        renderAll();
+    if (power_changed) {
+        renderPowerSnapshot();
+    }
+    if (time_changed) {
+        renderTimeSnapshot();
+    }
+    if (network_changed) {
+        renderNetworkSnapshot();
     }
 }
 
 void ClockPresenter::renderAll()
 {
-    const ClockSnapshot clock = TimeService::get().snapshot();
-    const PowerSnapshot power = PowerService::get().snapshot();
-    const NetworkSnapshot network = NetworkService::get().snapshot();
+    renderPowerSnapshot();
+    renderTimeSnapshot();
+    renderNetworkSnapshot();
+}
 
+void ClockPresenter::renderTimeSnapshot()
+{
+    const ClockSnapshot clock = TimeService::get().snapshot();
+    const ClockDisplayState time = model_.buildTime(clock.rtc_ok, clock.hour, clock.minute, clock.second,
+                                                    clock.week, clock.month, clock.day);
+    view_.renderTime(time, dimmed_);
+}
+
+void ClockPresenter::renderPowerSnapshot()
+{
+    const PowerSnapshot power = PowerService::get().snapshot();
     dimmed_ = power.dimmed;
     external_power_ = power.external_power;
 
-    const ClockDisplayState time = model_.buildTime(clock.rtc_ok, clock.hour, clock.minute, clock.second,
-                                                    clock.week, clock.month, clock.day);
     BatteryDisplayState battery = model_.buildBattery(power.battery_percent);
+    view_.renderBattery(battery, dimmed_);
+}
+
+void ClockPresenter::renderNetworkSnapshot()
+{
+    const NetworkSnapshot network = NetworkService::get().snapshot();
     NetworkDisplayState net{};
     net.wifi_connected = network.wifi_connected;
     net.sync_in_progress = network.sync_in_progress;
     net.ntp_synced = network.ntp_synced;
     net.external_power = external_power_;
-
-    view_.renderTime(time, dimmed_);
-    view_.renderBattery(battery, dimmed_);
     view_.renderNetwork(net, dimmed_);
 }

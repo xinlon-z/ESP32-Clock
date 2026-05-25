@@ -23,4 +23,7 @@ private:
     uint32_t last_network_revision_ = 0;
 
     void renderAll();
+    void renderTimeSnapshot();
+    void renderPowerSnapshot();
+    void renderNetworkSnapshot();
 };
