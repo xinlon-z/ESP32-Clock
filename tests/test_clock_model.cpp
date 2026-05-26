@@ -1,4 +1,4 @@
-#include "../main/app/features/clock/clock_model.cpp"
+#include "app/features/clock/clock_model.cpp"
 
 #include <stdio.h>
 #include <string.h>

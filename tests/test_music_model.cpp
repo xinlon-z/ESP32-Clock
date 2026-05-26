@@ -1,10 +1,10 @@
-#include "../main/app/features/music/music_model.h"
+#include "app/features/music/music_model.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 #include <string.h>
 
 namespace {
-constexpr uint32_t kFramesPerSecond = 44100;
 
 int expect(bool condition, const char* message)
 {

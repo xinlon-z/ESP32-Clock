@@ -1,4 +1,4 @@
-#include "../main/app/services/shairport_parser.h"
+#include "app/services/shairport_parser.h"
 
 #include <stdio.h>
 #include <string.h>

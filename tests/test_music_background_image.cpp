@@ -1,4 +1,5 @@
-#include "../main/app/features/music/widgets/background_image.h"
+#include "app/features/music/widgets/background_image.cpp"
+#include "app/features/music/util/music_background.cpp"
 
 #include <stdio.h>
 

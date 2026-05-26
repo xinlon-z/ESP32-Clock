@@ -1,7 +1,7 @@
-#include "../main/app/features/music/music_presenter.h"
-#include "../main/app/core/event/event_bus.h"
-#include "../main/app/services/mqtt_service.h"
-#include "../main/app/services/cover_service.h"
+#include "app/features/music/music_presenter.h"
+#include "app/core/event/event_bus.h"
+#include "app/services/mqtt_service.h"
+#include "app/services/cover_service.h"
 
 #include "esp_heap_caps.h"
 

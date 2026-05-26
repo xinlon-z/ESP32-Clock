@@ -1,5 +1,5 @@
-#include "../main/app/core/event/event_queue.h"
-#include "../main/app/core/event/app_events.h"
+#include "app/core/event/event_queue.h"
+#include "app/core/event/app_events.h"
 
 #include <stdio.h>
 

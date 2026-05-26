@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 struct lv_obj_t {};
 typedef unsigned short lv_color_t;
 
@@ -30,3 +32,5 @@ static inline unsigned int lv_color_to32(lv_color_t color)
     const unsigned int b = (color & 0x1f) << 3;
     return (r << 16) | (g << 8) | b;
 }
+
+static inline uint32_t lv_tick_elaps(uint32_t) { return 0; }

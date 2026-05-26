@@ -1,4 +1,5 @@
-#include "../main/app/services/time_service.cpp"
+#include "app/services/time_service.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 

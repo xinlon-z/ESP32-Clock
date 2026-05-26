@@ -1,6 +1,6 @@
-#include "../main/app/features/clock/clock_presenter.cpp"
-#include "../main/app/features/clock/clock_model.cpp"
-#include "../main/app/core/event/event_bus.cpp"
+#include "app/features/clock/clock_presenter.cpp"
+#include "app/features/clock/clock_model.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 #include <string.h>

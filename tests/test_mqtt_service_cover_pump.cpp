@@ -1,5 +1,6 @@
-#include "../main/app/services/mqtt_service.cpp"
-#include "../main/app/services/cover_service.cpp"
+#include "app/services/mqtt_service.cpp"
+#include "app/services/cover_service.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include "esp_heap_caps.h"
 

@@ -1,4 +1,5 @@
-#include "../main/app/screens/gesture_manager.cpp"
+#include "app/screens/gesture_manager.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 

@@ -1,11 +1,11 @@
-#include "../main/music_mqtt.cpp"
+#include "platform/music_mqtt.cpp"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "../main/app/core/event/event_bus.h"
-#include "../main/app/services/cover_service.h"
-#include "../main/app/services/mqtt_service.h"
+#include "app/core/event/event_bus.h"
+#include "app/services/cover_service.h"
+#include "app/services/mqtt_service.h"
 #include "esp_heap_caps.h"
 
 namespace ClockNet {

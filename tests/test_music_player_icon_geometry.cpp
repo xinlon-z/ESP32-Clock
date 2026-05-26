@@ -1,4 +1,4 @@
-#include "../main/music_player_icon_geometry.h"
+#include "app/features/music/util/music_player_icon_geometry.h"
 
 #include <stdio.h>
 

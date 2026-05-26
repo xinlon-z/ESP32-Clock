@@ -1,5 +1,5 @@
 #define private public
-#include "../main/power_mgr.cpp"
+#include "platform/power_mgr.cpp"
 #undef private
 
 #include <stdio.h>

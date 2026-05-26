@@ -1,4 +1,5 @@
-#include "../main/app/services/power_service.cpp"
+#include "app/services/power_service.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 

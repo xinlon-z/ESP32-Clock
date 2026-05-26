@@ -1,4 +1,4 @@
-#include "../main/app/core/event/event_bus.cpp"
+#include "app/core/event/event_bus.cpp"
 
 #include <stdio.h>
 

@@ -1,4 +1,4 @@
-#include "../main/music_visualizer.cpp"
+#include "app/features/music/util/music_visualizer.cpp"
 
 #include <stdio.h>
 
