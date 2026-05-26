@@ -13,7 +13,6 @@ public:
 
     void init();
     MusicState snapshot();
-    bool pumpPendingCover();
     bool applyField(const char* field, const char* payload, size_t payload_len, uint32_t last_progress_ms = 0);
 
 private:

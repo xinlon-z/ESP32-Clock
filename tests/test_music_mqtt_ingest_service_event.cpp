@@ -46,6 +46,7 @@ TEST(MusicMqttIngest, StateAndCoverEvents)
     }
 
     updateCover(cover, 128);
+    CoverService::get().tickDecodeForTest();
 
     CoverState active = CoverService::get().active();
     EXPECT_EQ(active.cover_id, 1) << "cover ingest should assign first cover_id";

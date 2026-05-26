@@ -75,6 +75,7 @@ TEST(MusicPresenterEventBus, TickAndCoverRender)
         cover[1] = 0xd8;
         EXPECT_TRUE(CoverService::get().acceptJpeg(cover, 128) != 0)
             << "cover service should publish a cover event";
+        CoverService::get().tickDecodeForTest();
     }
 
     presenter.tick();

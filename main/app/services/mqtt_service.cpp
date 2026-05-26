@@ -51,15 +51,6 @@ MusicState MqttService::snapshot()
     return state_;
 }
 
-bool MqttService::pumpPendingCover()
-{
-    MusicMqtt::CoverImage cover{};
-    if (!MusicMqtt::takeCover(&cover)) {
-        return false;
-    }
-    const uint32_t cover_id = CoverService::get().acceptJpeg(cover.data, cover.size);
-    return cover_id != 0;
-}
 
 bool MqttService::applyField(const char* field, const char* payload, size_t payload_len, uint32_t last_progress_ms)
 {
