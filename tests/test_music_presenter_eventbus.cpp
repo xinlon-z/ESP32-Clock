@@ -33,6 +33,12 @@ void MusicView::render(const MusicDisplayState&) { ++render_count; }
 void MusicView::renderCover(const BorrowedCover&) { ++cover_render_count; }
 void MusicView::renderCoverPlaceholder() { ++cover_placeholder_count; }
 
+// BackgroundWidget's ctor/dtor register with the singleton blur service in
+// production. The presenter test stubs out the entire view, so we provide
+// trivial replacements here to avoid linking the service.
+BackgroundWidget::BackgroundWidget() {}
+BackgroundWidget::~BackgroundWidget() {}
+
 TEST(MusicPresenterEventBus, TickAndCoverRender)
 {
     EventBus::get().resetForTest();

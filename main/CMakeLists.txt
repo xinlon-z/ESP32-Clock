@@ -17,6 +17,7 @@ idf_component_register(
        "app/features/music/music_presenter.cpp"
        "app/features/music/music_view.cpp"
        "app/features/music/widgets/background_image.cpp"
+       "app/features/music/widgets/background_blur_service.cpp"
        "app/features/music/widgets/background_widget.cpp"
        "app/features/music/widgets/cover_widget.cpp"
        "app/features/music/widgets/visualizer_widget.cpp"

@@ -5,16 +5,23 @@
 
 #include <stdint.h>
 
+struct BorrowedCover;
+
 class BackgroundWidget {
 public:
+    BackgroundWidget();
+    ~BackgroundWidget();
+
     void create(lv_obj_t* parent);
     void renderCover(const BorrowedCover& cover);
     void renderPlaceholder();
     void clear();
 
 private:
+    static void onBlurReady(uint32_t cover_id, void* user_data);
+    void applyCachedImage(const lv_img_dsc_t* image);
+
     lv_obj_t* image_obj_ = nullptr;
-    uint32_t cover_id_ = 0;
-    MusicBackgroundImage image_{};
-    MusicBackgroundImage stale_image_{};
+    uint32_t requested_cover_id_ = 0;
+    uint32_t displayed_cover_id_ = 0;
 };

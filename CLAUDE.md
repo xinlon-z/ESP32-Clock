@@ -24,7 +24,17 @@ idf.py -p /dev/cu.usbmodem111401 monitor
 
 **Before first build:** copy `main/clock_secrets_example.h` to `main/clock_secrets.h` and fill in WiFi credentials (`kWifiSsid`, `kWifiPassword`).
 
-There are no unit tests — this is firmware; verification is done by building and flashing.
+## Host-side unit tests
+
+Pure-logic modules (presenters, services, blur algorithm, blur service queueing) have GoogleTest-based host tests under `tests/`. They use header stubs in `tests/stubs/` for FreeRTOS, LVGL, ESP-IDF heap, and `LvglPort`, so they compile with plain g++ — no ESP-IDF toolchain required.
+
+```sh
+cmake -S tests -B build-tests
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+```
+
+When adding a new service or model, add a test in `tests/`, register it in `tests/CMakeLists.txt` via `clock_test(test_name)`, and use the `#include "...cpp"` pattern + a friend test peer class to access internals when needed.
 
 ## QEMU Simulation
 
