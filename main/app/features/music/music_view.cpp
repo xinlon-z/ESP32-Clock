@@ -1,7 +1,7 @@
 #include "music_view.h"
 
 #include "app/ui/fonts/music_fonts.h"
-#include "../../../music_player_icon_geometry.h"
+#include "util/music_player_icon_geometry.h"
 
 namespace {
 constexpr uint32_t kBg0 = 0x050507;

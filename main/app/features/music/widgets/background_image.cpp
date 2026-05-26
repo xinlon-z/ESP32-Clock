@@ -1,7 +1,7 @@
 #include "background_image.h"
 
 #include "esp_heap_caps.h"
-#include "music_background.h"
+#include "../util/music_background.h"
 
 namespace {
 lv_color_t* allocPixels(size_t count)

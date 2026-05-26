@@ -1,7 +1,7 @@
 #include "network_service.h"
 
 #include "../core/event/event_bus.h"
-#include "clock_net.h"
+#include "platform/clock_net.h"
 
 NetworkService& NetworkService::get()
 {

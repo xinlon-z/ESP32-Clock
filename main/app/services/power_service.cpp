@@ -1,7 +1,7 @@
 #include "power_service.h"
 
 #include "../core/event/event_bus.h"
-#include "power_mgr.h"
+#include "platform/power_mgr.h"
 
 PowerService& PowerService::get()
 {

@@ -1,6 +1,6 @@
 #include "music_model.h"
 
-#include "../../../music_time_format.h"
+#include "util/music_time_format.h"
 
 #include <stdio.h>
 #include <string.h>

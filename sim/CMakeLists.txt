@@ -20,9 +20,9 @@ add_executable(music_ui_sim
   main.cpp
   sim_assets.cpp
   sim_music_mqtt.cpp
-  "${PROJECT_ROOT}/main/music_background.cpp"
-  "${PROJECT_ROOT}/main/music_visualizer.cpp"
-  "${PROJECT_ROOT}/main/material_status_icons_20.c"
+  "${PROJECT_ROOT}/main/app/features/music/util/music_background.cpp"
+  "${PROJECT_ROOT}/main/app/features/music/util/music_visualizer.cpp"
+  "${PROJECT_ROOT}/main/app/ui/fonts/material_status_icons_20.c"
   "${PROJECT_ROOT}/main/app/core/event/event_bus.cpp"
   "${PROJECT_ROOT}/main/app/features/music/music_model.cpp"
   "${PROJECT_ROOT}/main/app/features/music/music_presenter.cpp"

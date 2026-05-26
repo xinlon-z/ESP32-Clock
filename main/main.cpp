@@ -2,16 +2,16 @@
 #include "freertos/task.h"
 
 #include "adc_bsp.h"
-#include "clock_net.h"
+#include "platform/clock_net.h"
 #include "i2c_bsp.h"
 #include "i2c_equipment.h"
 #include "lcd_bl_pwm_bsp.h"
 #include "lvgl.h"
-#include "lvgl_port.h"
-#include "power_mgr.h"
+#include "platform/lvgl_port.h"
+#include "platform/power_mgr.h"
 #include "app/services/mqtt_service.h"
 #include "app/screens/screen_manager.h"
-#include "touch_drv.h"
+#include "platform/touch_drv.h"
 #include "user_config.h"
 
 extern "C" void app_main(void)

@@ -1,6 +1,6 @@
 #include "visualizer_widget.h"
 
-#include "../../../../music_visualizer.h"
+#include "../util/music_visualizer.h"
 
 namespace {
 constexpr int kSpectrumX = 214;
