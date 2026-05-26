@@ -102,6 +102,21 @@ lv_color_t* resampleCoverToSquare(const lv_color_t* src, uint16_t src_w, uint16_
     return dst;
 }
 
+// Returns the largest tjpgd scale factor (0–3, meaning 1/1 through 1/8) such
+// that both decoded dimensions are still >= kCoverSize. Falls back to scale 0
+// if the image is already smaller than the target — the resample will upsample
+// in that case, but there is no better option.
+uint8_t pickJpegScale(uint16_t w, uint16_t h)
+{
+    uint8_t scale = 0;
+    while (scale < 3 &&
+           (w >> (scale + 1)) >= kCoverSize &&
+           (h >> (scale + 1)) >= kCoverSize) {
+        ++scale;
+    }
+    return scale;
+}
+
 // Decode one JPEG buffer (worker-owned; caller is responsible for freeing
 // jpeg_data on return). Does not hold any service mutex.
 CoverStatus decodeJpeg(const uint8_t* jpeg_data, uint32_t jpeg_size,
@@ -130,10 +145,7 @@ CoverStatus decodeJpeg(const uint8_t* jpeg_data, uint32_t jpeg_size,
         return CoverStatus::Error;
     }
 
-    uint8_t scale = 0;
-    while (scale < 3 && ((jd.width >> scale) > kCoverSize || (jd.height >> scale) > kCoverSize)) {
-        ++scale;
-    }
+    uint8_t scale = pickJpegScale(jd.width, jd.height);
     uint16_t out_w = static_cast<uint16_t>(jd.width >> scale);
     uint16_t out_h = static_cast<uint16_t>(jd.height >> scale);
     if (out_w == 0) out_w = 1;

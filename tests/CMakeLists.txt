@@ -45,6 +45,7 @@ clock_test(test_power_service)
 clock_test(test_time_service)
 clock_test(test_screen_nav)
 clock_test(test_lvgl_rotation)
+clock_test(test_cover_scale)
 
 # Separate compilation: music_presenter.cpp and music_model.cpp both define
 # kFramesPerSecond in anonymous namespaces, which collide in a single TU.
