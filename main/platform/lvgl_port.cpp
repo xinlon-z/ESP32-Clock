@@ -1,4 +1,5 @@
 #include "lvgl_port.h"
+#include "lvgl_rotation.h"
 
 #include <string.h>
 
@@ -24,12 +25,10 @@ static const char* kTag = "lvgl_port";
 
 static SemaphoreHandle_t s_mux         = nullptr;
 static SemaphoreHandle_t s_flush_semap = nullptr;
-static uint16_t*         s_dma_buf     = nullptr;
+// Two ping-pong DMA-capable staging buffers. While the panel DMAs out of
+// one, flushCb writes the next chunk's rotated pixels into the other.
+static uint16_t*         s_dma_bufs[2] = {nullptr, nullptr};
 static bool              s_initialized = false;
-
-#if (Rotated == USER_DISP_ROT_90) && !HW_ROTATION_TEST
-static uint16_t* s_rot_buf = nullptr;
-#endif
 
 static const axs15231b_lcd_init_cmd_t kInitCmds[] = {
     {0x11, (uint8_t[]){0x00}, 0, 100},
@@ -48,7 +47,7 @@ bool LvglPort::onFlushDone(esp_lcd_panel_io_handle_t, esp_lcd_panel_io_event_dat
 
 void LvglPort::flushCb(lv_disp_drv_t* drv, const lv_area_t*, lv_color_t* color_map)
 {
-    esp_lcd_panel_handle_t panel      = static_cast<esp_lcd_panel_handle_t>(drv->user_data);
+    esp_lcd_panel_handle_t panel = static_cast<esp_lcd_panel_handle_t>(drv->user_data);
 
 #if HW_ROTATION_TEST
     // Hardware-rotation path: panel scans landscape, no software transpose.
@@ -66,42 +65,77 @@ void LvglPort::flushCb(lv_disp_drv_t* drv, const lv_area_t*, lv_color_t* color_m
         const int rows  = (y1 + rows_per_chunk > total_rows) ? (total_rows - y1)
                                                               : rows_per_chunk;
         const int bytes = EXAMPLE_LCD_H_RES * rows * 2;
-        memcpy(s_dma_buf, map, bytes);
-        esp_lcd_panel_draw_bitmap(panel, 0, y1, EXAMPLE_LCD_H_RES, y1 + rows, s_dma_buf);
+        memcpy(s_dma_bufs[0], map, bytes);
+        esp_lcd_panel_draw_bitmap(panel, 0, y1, EXAMPLE_LCD_H_RES, y1 + rows, s_dma_bufs[0]);
         map += EXAMPLE_LCD_H_RES * rows;
         y1  += rows;
     }
     xSemaphoreTake(s_flush_semap, portMAX_DELAY);
 #else
-    const int              flush_cnt  = LVGL_SPIRAM_BUFF_LEN / LVGL_DMA_BUFF_LEN;
-    const int              row_step   = LCD_NOROT_VRES / flush_cnt;
-    const int              dma_pixels = LVGL_DMA_BUFF_LEN / 2;
-    int y1 = 0;
-    int y2 = row_step;
+    const int dma_pixels = LVGL_DMA_BUFF_LEN / 2;
 
 #if (Rotated == USER_DISP_ROT_90)
+    // Streaming rotate-and-DMA: rotation of chunk N+1 runs in parallel with
+    // DMA of chunk N. Each chunk is cols_per_chunk LVGL columns; after
+    // rotation it occupies cols_per_chunk native rows × EXAMPLE_LCD_V_RES
+    // native cols of the panel.
+    const uint16_t cols_per_chunk = static_cast<uint16_t>(dma_pixels / EXAMPLE_LCD_V_RES);
     const uint16_t* src = reinterpret_cast<const uint16_t*>(color_map);
-    uint32_t idx = 0;
-    for (uint16_t col = 0; col < EXAMPLE_LCD_H_RES; ++col) {
-        for (uint16_t row = 0; row < EXAMPLE_LCD_V_RES; ++row) {
-            s_rot_buf[idx++] = src[EXAMPLE_LCD_H_RES * (EXAMPLE_LCD_V_RES - row - 1) + col];
+
+    auto remainingCols = [](uint16_t start) -> uint16_t {
+        const uint16_t left = static_cast<uint16_t>(EXAMPLE_LCD_H_RES - start);
+        return left;
+    };
+
+    int      buf_idx   = 0;
+    uint16_t col_start = 0;
+    uint16_t col_count = (cols_per_chunk < remainingCols(col_start))
+                             ? cols_per_chunk : remainingCols(col_start);
+
+    // Stage chunk 0 before any DMA starts.
+    rotateLandscape90Range(src, s_dma_bufs[buf_idx], EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES,
+                           col_start, col_count);
+
+    xSemaphoreGive(s_flush_semap);
+    while (col_start < EXAMPLE_LCD_H_RES) {
+        xSemaphoreTake(s_flush_semap, portMAX_DELAY);
+        esp_lcd_panel_draw_bitmap(panel, 0, col_start, LCD_NOROT_HRES,
+                                  col_start + col_count, s_dma_bufs[buf_idx]);
+
+        const uint16_t next_start = static_cast<uint16_t>(col_start + col_count);
+        if (next_start < EXAMPLE_LCD_H_RES) {
+            // While the panel DMAs the chunk we just submitted, rotate the
+            // next chunk into the alternate buffer.
+            const int      next_buf   = buf_idx ^ 1;
+            const uint16_t next_count = (cols_per_chunk < remainingCols(next_start))
+                                            ? cols_per_chunk : remainingCols(next_start);
+            rotateLandscape90Range(src, s_dma_bufs[next_buf],
+                                   EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES,
+                                   next_start, next_count);
+            buf_idx   = next_buf;
+            col_count = next_count;
         }
+        col_start = next_start;
     }
-    uint16_t* map = s_rot_buf;
+    xSemaphoreTake(s_flush_semap, portMAX_DELAY);
 #else
+    const int flush_cnt = LVGL_SPIRAM_BUFF_LEN / LVGL_DMA_BUFF_LEN;
+    const int row_step  = LCD_NOROT_VRES / flush_cnt;
     uint16_t* map = reinterpret_cast<uint16_t*>(color_map);
-#endif
+    int y1 = 0;
+    int y2 = row_step;
 
     xSemaphoreGive(s_flush_semap);
     for (int i = 0; i < flush_cnt; ++i) {
         xSemaphoreTake(s_flush_semap, portMAX_DELAY);
-        memcpy(s_dma_buf, map, LVGL_DMA_BUFF_LEN);
-        esp_lcd_panel_draw_bitmap(panel, 0, y1, LCD_NOROT_HRES, y2, s_dma_buf);
+        memcpy(s_dma_bufs[0], map, LVGL_DMA_BUFF_LEN);
+        esp_lcd_panel_draw_bitmap(panel, 0, y1, LCD_NOROT_HRES, y2, s_dma_bufs[0]);
         y1  += row_step;
         y2  += row_step;
         map += dma_pixels;
     }
     xSemaphoreTake(s_flush_semap, portMAX_DELAY);
+#endif
 #endif
     lv_disp_flush_ready(drv);
 }
@@ -131,15 +165,13 @@ esp_err_t LvglPort::init()
         return ESP_OK;
     }
 
-    // DMA buffer (internal SRAM, DMA-capable)
-    s_dma_buf = static_cast<uint16_t*>(heap_caps_malloc(LVGL_DMA_BUFF_LEN, MALLOC_CAP_DMA));
-    if (!s_dma_buf) return ESP_ERR_NO_MEM;
-
-#if (Rotated == USER_DISP_ROT_90) && !HW_ROTATION_TEST
-    s_rot_buf = static_cast<uint16_t*>(
-        heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES * sizeof(uint16_t), MALLOC_CAP_SPIRAM));
-    if (!s_rot_buf) return ESP_ERR_NO_MEM;
-#endif
+    // Two DMA-capable staging buffers (internal SRAM). The flush path
+    // ping-pongs between them so each chunk's rotation overlaps with the
+    // previous chunk's DMA. Replaces the old single 215 KiB SPIRAM rotation
+    // buffer (s_rot_buf) — net savings ~193 KiB SPIRAM.
+    s_dma_bufs[0] = static_cast<uint16_t*>(heap_caps_malloc(LVGL_DMA_BUFF_LEN, MALLOC_CAP_DMA));
+    s_dma_bufs[1] = static_cast<uint16_t*>(heap_caps_malloc(LVGL_DMA_BUFF_LEN, MALLOC_CAP_DMA));
+    if (!s_dma_bufs[0] || !s_dma_bufs[1]) return ESP_ERR_NO_MEM;
 
     s_flush_semap = xSemaphoreCreateBinary();
     if (!s_flush_semap) return ESP_ERR_NO_MEM;

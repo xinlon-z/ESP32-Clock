@@ -1,6 +1,7 @@
 idf_component_register(
   SRCS "main.cpp"
        "platform/lvgl_port.cpp"
+       "platform/lvgl_rotation.cpp"
        "platform/touch_drv.cpp"
        "platform/power_mgr.cpp"
        "platform/clock_net.cpp"
