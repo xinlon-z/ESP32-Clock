@@ -1,20 +1,16 @@
 #include "music_background.h"
 
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 namespace {
 
-uint8_t colorR(lv_color_t color)
-{
-    return static_cast<uint8_t>((lv_color_to32(color) >> 16) & 0xff);
-}
+constexpr const char* kTag = "music_bg";
 
-uint8_t colorG(lv_color_t color)
+inline uint32_t traceMs()
 {
-    return static_cast<uint8_t>((lv_color_to32(color) >> 8) & 0xff);
-}
-
-uint8_t colorB(lv_color_t color)
-{
-    return static_cast<uint8_t>(lv_color_to32(color) & 0xff);
+    return static_cast<uint32_t>(xTaskGetTickCount()) * portTICK_PERIOD_MS;
 }
 
 void renderCoverFill(const lv_color_t* cover, uint16_t cover_w, uint16_t cover_h,
@@ -71,17 +67,17 @@ void blurHorizontal(const lv_color_t* src, lv_color_t* dst, uint16_t w, uint16_t
             }
 
             while (right <= next_right) {
-                const lv_color_t color = src[y * w + right];
-                sum_r += colorR(color);
-                sum_g += colorG(color);
-                sum_b += colorB(color);
+                const uint32_t rgb = lv_color_to32(src[y * w + right]);
+                sum_r += (rgb >> 16) & 0xff;
+                sum_g += (rgb >> 8)  & 0xff;
+                sum_b += rgb         & 0xff;
                 ++right;
             }
             while (left < next_left) {
-                const lv_color_t color = src[y * w + left];
-                sum_r -= colorR(color);
-                sum_g -= colorG(color);
-                sum_b -= colorB(color);
+                const uint32_t rgb = lv_color_to32(src[y * w + left]);
+                sum_r -= (rgb >> 16) & 0xff;
+                sum_g -= (rgb >> 8)  & 0xff;
+                sum_b -= rgb         & 0xff;
                 ++left;
             }
 
@@ -110,17 +106,17 @@ void blurVertical(const lv_color_t* src, lv_color_t* dst, uint16_t w, uint16_t h
             }
 
             while (bottom <= next_bottom) {
-                const lv_color_t color = src[bottom * w + x];
-                sum_r += colorR(color);
-                sum_g += colorG(color);
-                sum_b += colorB(color);
+                const uint32_t rgb = lv_color_to32(src[bottom * w + x]);
+                sum_r += (rgb >> 16) & 0xff;
+                sum_g += (rgb >> 8)  & 0xff;
+                sum_b += rgb         & 0xff;
                 ++bottom;
             }
             while (top < next_top) {
-                const lv_color_t color = src[top * w + x];
-                sum_r -= colorR(color);
-                sum_g -= colorG(color);
-                sum_b -= colorB(color);
+                const uint32_t rgb = lv_color_to32(src[top * w + x]);
+                sum_r -= (rgb >> 16) & 0xff;
+                sum_g -= (rgb >> 8)  & 0xff;
+                sum_b -= rgb         & 0xff;
                 ++top;
             }
 
@@ -155,13 +151,26 @@ bool musicGenerateBlurredBackground(const lv_color_t* cover, uint16_t cover_w, u
         return false;
     }
 
+    const uint32_t t0 = traceMs();
     renderCoverFill(cover, cover_w, cover_h, output, output_w, output_h);
+    const uint32_t t1 = traceMs();
 
     const uint16_t radius = blurRadiusFor(output_w, output_h);
+    uint32_t h_total = 0;
+    uint32_t v_total = 0;
     for (uint8_t i = 0; i < 3; ++i) {
+        const uint32_t ta = traceMs();
         blurHorizontal(output, scratch, output_w, output_h, radius);
+        const uint32_t tb = traceMs();
         blurVertical(scratch, output, output_w, output_h, radius);
+        const uint32_t tc = traceMs();
+        h_total += tb - ta;
+        v_total += tc - tb;
     }
+
+    ESP_LOGI(kTag,
+             "[trace] blur_internal: fill=%u ms, h_passes=%u ms, v_passes=%u ms, radius=%u, %ux%u",
+             t1 - t0, h_total, v_total, radius, output_w, output_h);
 
     return true;
 }
