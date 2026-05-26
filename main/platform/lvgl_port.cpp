@@ -49,29 +49,6 @@ void LvglPort::flushCb(lv_disp_drv_t* drv, const lv_area_t*, lv_color_t* color_m
 {
     esp_lcd_panel_handle_t panel = static_cast<esp_lcd_panel_handle_t>(drv->user_data);
 
-#if HW_ROTATION_TEST
-    // Hardware-rotation path: panel scans landscape, no software transpose.
-    // Send the LVGL draw buffer linearly. Use full-width row chunks to fit
-    // within LVGL_DMA_BUFF_LEN.
-    const int dma_pixels      = LVGL_DMA_BUFF_LEN / 2;
-    const int rows_per_chunk  = dma_pixels / EXAMPLE_LCD_H_RES;
-    const int total_rows      = EXAMPLE_LCD_V_RES;
-    const uint16_t* map       = reinterpret_cast<const uint16_t*>(color_map);
-
-    xSemaphoreGive(s_flush_semap);
-    int y1 = 0;
-    while (y1 < total_rows) {
-        xSemaphoreTake(s_flush_semap, portMAX_DELAY);
-        const int rows  = (y1 + rows_per_chunk > total_rows) ? (total_rows - y1)
-                                                              : rows_per_chunk;
-        const int bytes = EXAMPLE_LCD_H_RES * rows * 2;
-        memcpy(s_dma_bufs[0], map, bytes);
-        esp_lcd_panel_draw_bitmap(panel, 0, y1, EXAMPLE_LCD_H_RES, y1 + rows, s_dma_bufs[0]);
-        map += EXAMPLE_LCD_H_RES * rows;
-        y1  += rows;
-    }
-    xSemaphoreTake(s_flush_semap, portMAX_DELAY);
-#else
     const int dma_pixels = LVGL_DMA_BUFF_LEN / 2;
 
 #if (Rotated == USER_DISP_ROT_90)
@@ -79,6 +56,11 @@ void LvglPort::flushCb(lv_disp_drv_t* drv, const lv_area_t*, lv_color_t* color_m
     // DMA of chunk N. Each chunk is cols_per_chunk LVGL columns; after
     // rotation it occupies cols_per_chunk native rows × EXAMPLE_LCD_V_RES
     // native cols of the panel.
+    //
+    // The AXS15231B silicon on this board does NOT honour MADCTL MV in QSPI
+    // mode — empirically tested 2026-05 with corrupted output, matching
+    // Waveshare's own reference firmware which always uses software
+    // rotation. So this software pipeline is the production path.
     const uint16_t cols_per_chunk = static_cast<uint16_t>(dma_pixels / EXAMPLE_LCD_V_RES);
     const uint16_t* src = reinterpret_cast<const uint16_t*>(color_map);
 
@@ -135,7 +117,6 @@ void LvglPort::flushCb(lv_disp_drv_t* drv, const lv_area_t*, lv_color_t* color_m
         map += dma_pixels;
     }
     xSemaphoreTake(s_flush_semap, portMAX_DELAY);
-#endif
 #endif
     lv_disp_flush_ready(drv);
 }
@@ -232,33 +213,6 @@ esp_err_t LvglPort::init()
     ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_PIN_NUM_LCD_RST, 1));
     vTaskDelay(pdMS_TO_TICKS(30));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
-
-#if HW_ROTATION_TEST
-    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel, true));
-    ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel, HW_ROTATION_MIRROR_X != 0,
-                                                HW_ROTATION_MIRROR_Y != 0));
-
-    // The AXS15231B QSPI draw_bitmap path only sends CASET, not RASET, so the
-    // row range stays at whatever the init sequence left (panel native height,
-    // 0..639). With MV=1 the row range must match the landscape height
-    // (EXAMPLE_LCD_V_RES = 172) or pixels land at wrong addresses. Send a
-    // one-shot RASET here using the same QSPI command encoding the driver
-    // uses internally: opcode 0x02 (write_cmd) shifted into bits [31:24],
-    // LCD command 0x2B in bits [15:8].
-    const uint32_t kQspiWriteCmd  = 0x02u;
-    const uint32_t raset_qspi_cmd = (kQspiWriteCmd << 24) | (0x2Bu << 8);
-    const uint16_t y_end_inclusive = static_cast<uint16_t>(EXAMPLE_LCD_V_RES - 1);
-    const uint8_t raset_data[4] = {
-        0x00, 0x00,
-        static_cast<uint8_t>((y_end_inclusive >> 8) & 0xFF),
-        static_cast<uint8_t>(y_end_inclusive & 0xFF),
-    };
-    ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(panel_io, raset_qspi_cmd,
-                                              raset_data, sizeof(raset_data)));
-    ESP_LOGI(kTag, "HW_ROTATION_TEST: swap_xy=1 mirror_x=%d mirror_y=%d raset=0..%u",
-             HW_ROTATION_MIRROR_X, HW_ROTATION_MIRROR_Y,
-             static_cast<unsigned>(y_end_inclusive));
-#endif
 
     // LVGL + double-buffered SPIRAM draw buffers
     lv_init();
