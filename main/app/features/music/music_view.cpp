@@ -127,6 +127,8 @@ void MusicView::create()
     lv_obj_set_style_bg_grad_color(bg, lv_color_hex(0x101827), 0);
     lv_obj_set_style_bg_grad_dir(bg, LV_GRAD_DIR_HOR, 0);
 
+    background_.create(bg);
+
     lv_obj_t* scrim = lv_obj_create(bg);
     clearRectStyle(scrim);
     lv_obj_set_size(scrim, kScreenW, kScreenH);
@@ -175,6 +177,7 @@ void MusicView::destroy()
     subtitle_ = nullptr;
     time_ = nullptr;
     play_pause_icon_ = nullptr;
+    background_.clear();
     cover_.clear();
     visualizer_.clear();
 }
@@ -197,10 +200,12 @@ void MusicView::render(const MusicDisplayState& state)
 
 void MusicView::renderCover(const BorrowedCover& cover)
 {
+    background_.renderCover(cover);
     cover_.renderCover(cover);
 }
 
 void MusicView::renderCoverPlaceholder()
 {
+    background_.renderPlaceholder();
     cover_.renderPlaceholder();
 }

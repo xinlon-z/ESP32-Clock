@@ -27,6 +27,8 @@ add_executable(music_ui_sim
   "${PROJECT_ROOT}/main/app/features/music/music_model.cpp"
   "${PROJECT_ROOT}/main/app/features/music/music_presenter.cpp"
   "${PROJECT_ROOT}/main/app/features/music/music_view.cpp"
+  "${PROJECT_ROOT}/main/app/features/music/widgets/background_image.cpp"
+  "${PROJECT_ROOT}/main/app/features/music/widgets/background_widget.cpp"
   "${PROJECT_ROOT}/main/app/features/music/widgets/cover_widget.cpp"
   "${PROJECT_ROOT}/main/app/features/music/widgets/visualizer_widget.cpp"
   "${PROJECT_ROOT}/main/app/screens/music_screen.cpp"
