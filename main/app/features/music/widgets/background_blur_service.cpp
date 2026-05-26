@@ -219,10 +219,20 @@ void BackgroundBlurService::taskLoop()
             next.pixels = out_pixels;
             buildImageHeader(&next, job.target_w, job.target_h);
 
+            // The cache swap publishes new cache_.image.data to the LVGL
+            // render task (Core 0). Hold LvglPort here to make the swap
+            // atomic relative to lv_timer_handler — otherwise the renderer
+            // can read a half-updated descriptor mid-blit and produce torn
+            // (striped) output, especially noticeable on the music UI's
+            // background image at 30 FPS visualizer rates. Lock order is
+            // LvglPort -> mutex_, matching the LVGL-thread path.
+            LvglPort::lock();
+
             xSemaphoreTake(mutex_, portMAX_DELAY);
             const bool superseded = has_pending_ && pending_.cover_id != job.cover_id;
             if (superseded) {
                 xSemaphoreGive(mutex_);
+                LvglPort::unlock();
                 heap_caps_free(out_pixels);
                 freeJob(&job);
                 continue;
@@ -236,10 +246,8 @@ void BackgroundBlurService::taskLoop()
             heap_caps_free(job.src_pixels);
             job.src_pixels = nullptr;
 
-            if (LvglPort::lock(100)) {
-                lv_async_call(onAsyncReady, this);
-                LvglPort::unlock();
-            }
+            lv_async_call(onAsyncReady, this);
+            LvglPort::unlock();
         }
     }
 }
