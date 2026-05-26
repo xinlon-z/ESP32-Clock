@@ -7,7 +7,7 @@ constexpr int kSpectrumX = 214;
 constexpr int kSpectrumY = 112;
 constexpr int kSpectrumBarW = 4;
 constexpr int kSpectrumGap = 3;
-constexpr uint32_t kAnimPeriodMs = 50;  // ~20 FPS while playing.
+constexpr uint32_t kAnimPeriodMs = 33;  // ~30 FPS while playing.
 
 void clearStyle(lv_obj_t* obj)
 {
@@ -84,7 +84,7 @@ void VisualizerWidget::onAnimTimer(lv_timer_t* timer)
 
 void VisualizerWidget::updateAnimationTimer()
 {
-    // Animate at ~20 FPS only when music is playing AND the screen is bright.
+    // Animate at ~30 FPS only when music is playing AND the screen is bright.
     // Pausing on dim avoids burning Core 0 cycles redrawing pixels nobody can
     // see — significant for battery life when the device sits idle on the
     // music screen.
